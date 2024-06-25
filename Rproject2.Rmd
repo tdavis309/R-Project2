@@ -1,0 +1,337 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code.
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*.
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+```{r}
+train <- read.csv("C:/Users/17735/Downloads/data analytics GC homework/train.csv")
+View(train)
+train <- train %>% drop_na()
+```
+
+```{r}
+summary_by_age_group <-  train %>%
+  group_by(AgeGroup) %>%
+  summarize(
+    count = n(),)
+view(summary_by_age_group)
+
+#this has told me that the most of the passangers fall into the young adult catagoroy which is between 36 & 55 Also I see the lowest age group is seniors
+```
+
+```{r}
+#here i'll count how many passangers were vip
+summary_vip <-  train %>%
+  group_by(VIP) %>%
+  summarize(
+    count = n(),)
+view(summary_vip)
+#This tells me that only 199 of the nearly 8600 entries were VIP! I wonder how this played a part in cryosleeping as well.
+```
+
+```{r}
+#after looking at the data, I would like to know the corelation between the age of passengers that chose to have cyro sleep and those that did not. It is my guess that the older passengers would choose cyro sleep.
+```
+
+```{r}
+summary_cryosleep <-  train %>%
+  group_by(CryoSleep) %>%
+  summarize(
+    count = n(),)
+view(summary_cryosleep)
+
+#the number of passengers choosing cryo sleep vs not choosing it only differ by about 2,000. This leads me to believe that price may not be a leading factor in choosing Cryosleep.
+```
+
+```{r}
+#view(train)
+#next I will be looking to see what the was the avarage age of passangers
+
+summary_ave_age <- train %>%
+  summarize(
+    ave_age = mean(Age, na.rm = TRUE)
+  )
+view(summary_ave_age)
+
+#the average passenger age is about 29 years old.
+```
+
+```{r}
+
+#now i wonder which planet had the most passengers aboard
+summary_homeplanet <- train %>%
+  group_by(HomePlanet) %>%
+  summarize(
+    count = n()              
+  )
+view(summary_homeplanet)
+#Earth had the most Passengers, Almsot doubling Europa and 4xs more than Mars
+```
+
+```{r}
+#now i wonder the break down of ages coming from each planent, like which planet had the most of each group
+summary_agegroup_homeplanet <- train %>%
+  group_by(HomePlanet, Age) %>%
+  summarize(
+    
+    count = n()
+    
+  )
+view(summary_age_group_homeplanet)
+```
+
+```{r}
+summary_agegroup_homeplanet <- train %>%
+  group_by(HomePlanet, AgeGroup) %>%
+  summarize(
+    count = n()
+  )
+view(summary_agegroup_homeplanet)
+```
+
+```{R}
+ggplot(summary_agegroup_homeplanet, aes(x = "", y = AgeGroup, fill = AgeGroup)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y", start = 0) +
+  labs(title = "Distribution of Passengers by Age Group and HomePlanet") +
+  theme_void() +
+  theme(legend.position = "right")
+#i Do not like this graph
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```         
+```
+
+```{r}
+summary_agegroup_homeplanet <- train %>%
+  group_by(HomePlanet, AgeGroup) %>%
+  summarize(
+    count = n(),
+    .groups = 'drop'  # Ungroup after summarizing
+  )
+
+# Find the maximum count for each AgeGroup
+max_counts <- summary_agegroup_homeplanet %>%
+  group_by(AgeGroup) %>%
+  summarize(
+    max_count = max(count),
+    .groups = 'drop'  # Ungroup after summarizing
+  )
+
+# Join the summaries to get the planets with the maximum counts
+most_in_each_group <- summary_agegroup_homeplanet %>%
+  inner_join(max_counts, by = c("AgeGroup", "count" = "max_count"))
+
+# View the result
+view(most_in_each_group)
+#this is not working out like i need it to. Im gonna skip it
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+summary_by_age_homep <- train %>%
+  group_by(HomePlanet, AgeGroup) %>%
+  summarize(count = n(), .groups = 'drop')
+#this is worked, as expected each group had the most of young adults. Earth has the most passengers by quite a bit so these numbers are a bit skwed. #not very useful!
+```
+
+```{r}
+#i will be selecting the columns so that the ones i see first are age, cyrosleep & vip
+view(select(train, Age, CryoSleep, VIP))
+
+```
+
+```{r}
+# I would like to do is group the ages by different age groups. Then I would like to add another coulmn that classifies each age group: youth: 0-12, teen:13-19, young adult: 20-35, adult: 35-64, senior: 65+
+```
+
+```{r}
+#create the column for the ages first
+#going to create a function and then mutate
+
+age <- group_by(train, Age)
+age_col <- function(age) {
+  if (is.na(age)) {
+    return(NA)  # Handle missing values
+  } else if (age <= 12) {
+    return("Child")
+  } else if (age <= 19) {
+    return("Teenager")
+  } else if (age <= 35) {
+    return("Young Adult")
+  } else if (age <= 55) {
+    return("Adult")
+  } else if (age <= 65) {
+    return("Middle Age")
+  } else {
+    return("Senior")
+  }
+}
+train <- train %>%
+  mutate(AgeGroup = sapply(Age, age_col))
+
+```
+
+```{r}
+view(select(train, CryoSleep, Age, AgeGroup))
+```
+
+```{r}
+
+summary_by_cryo_sleep <- train %>%
+  group_by(CryoSleep) %>%
+  summarize(
+    count = n(),                
+    age_count = sum(!is.na(Age))  
+  )
+
+#this is not what i was looking for
+```
+
+```{r}
+#I would like to look at a break chart showing the amount of passangers from Earth that are vip
+```
+
+```{r}
+
+```
+
+```{r}
+#grouping together to see which age group had the most to use cyrosleep
+
+
+summary_by_cryo_sleep <- train %>%
+  group_by(CryoSleep, AgeGroup) %>%
+  summarize(count = n(), .groups = 'drop')
+
+view((summary_by_cryo_sleep))
+
+```
+
+```{r}
+ggplot(summary_by_cryo_sleep, aes(x = "", y = AgeGroup, fill = AgeGroup)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y", start = 0) +
+  labs(title = "Passengers with CryoSleep by AgeGroup") +
+  theme_void() +
+  theme(legend.position = "right")
+
+
+```
+
+```         
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+ggplot(data = train) + 
+  geom_point(mapping = aes(x = Age, y = CryoSleep))
+#this makes no sense, i have to find a way to graph this
+```
+
+```{r}
+
+summary_vip_cryosleep <- train %>%
+  group_by(CryoSleep, VIP) %>%
+  summarize(count = n(), .groups = 'drop')
+
+view(summary_vip_cryosleep)
+
+```
+
+```{r}
+ggplot(summary_vip_cryosleep, aes(x = "", y = VIP, fill = VIP)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y", start = 0) +
+  labs(title = "Passengers with VIP & CRYOSLEEP") +
+  theme_void() +
+  theme(legend.position = "right")
+#Im not sure what the pinkish area is.
+```
+
+```{r}
+
+```
+
+```         
+```
+
+#### Introduction
+
+This analysis aims to provide insights into the characteristics of passengers on an imaginary trip to another planet. The dataset includes variables such as passenger ID, home planet, cryosleep status, VIP status, age, and more. Key findings from the data will be highlighted, including the distribution of passengers across age groups, the correlation between age and cryosleep choice, and the impact of home planet on passenger characteristics.
+
+#### Age Group Distribution
+
+The dataset reveals that the majority of passengers fall into the "Young Adult" category, defined as ages between 36 and 55. This indicates that a significant portion of passengers are in their prime working and traveling years. On the other hand, the "Senior" age group, representing passengers aged 55 and above, is the smallest. This could suggest that older individuals are less likely to undertake such a journey, possibly due to health concerns or other factors.
+
+#### VIP Status and Cryosleep
+
+Out of nearly 8,600 entries, only 199 passengers were classified as VIPs. This low number suggests that VIP status is a rare designation among the passengers. An interesting aspect to explore is how VIP status influences the likelihood of opting for cryosleep. Preliminary observations indicate that VIP status does not significantly affect the decision to undergo cryosleep.
+
+#### Cryosleep and Age Correlation
+
+One of the hypotheses is that older passengers might be more inclined to choose cryosleep due to the potential physical strain of long-duration space travel. The data shows that the number of passengers choosing cryosleep versus those not choosing it differs by approximately 2,000, indicating a substantial portion of the passenger population is interested in cryosleep.
+
+Further analysis is needed to confirm the correlation between age and cryosleep choice. Initial findings do not strongly support the hypothesis that older passengers are more likely to choose cryosleep. This suggests that other factors, such as personal preference or health status, might play a more significant role.
+
+#### Average Passenger Age
+
+The average age of passengers is about 29 years old. This aligns with the earlier observation that the "Young Adult" category is the largest. It indicates that the typical passenger is relatively young, which could be due to the adventurous nature of space travel appealing more to younger individuals.
+
+#### Home Planet Distribution
+
+The distribution of passengers across different home planets shows that Earth has the most passengers by a considerable margin. Earth nearly doubles the number of passengers from Europa and has four times more than Mars. This significant disparity suggests that Earth is the primary source of travelers, which could be due to its larger population or more developed space travel infrastructure.
+
+#### Age Group and Home Planet
+
+Each age group, across different home planets, shows a consistent trend of having the most passengers in the "Young Adult" category. However, because Earth has the most passengers overall, these numbers might be skewed. It is important to consider the larger context of Earth's population size and space travel capabilities when interpreting these results.
+
+#### Conclusion
+
+In conclusion, this analysis highlights several key aspects of the passenger data:
+
+-   The predominance of the "Young Adult" age group.
+
+-   The relatively low number of VIP passengers.
+
+-   The lack of a strong correlation between age and cryosleep choice.
+
+-   The significant presence of Earth as the primary home planet for travelers.
+
+These insights provide a comprehensive understanding of the passenger demographics and their choices related to cryosleep and travel. Further research could delve into the reasons behind these trends and explore additional variables that might influence passenger behavior.
